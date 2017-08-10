@@ -34,7 +34,7 @@ trait Utility {
 
 
     /**
-      * This module will handle Small Files Problem.
+      * This module will handle  Skewness in the data and Small Files Problem.
       * While writing the dataframe to hdfs, it will create the number of files for each partition based on the passed map
       *
       * @param df: DataFrame to be Repartitioned
