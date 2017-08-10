@@ -496,6 +496,93 @@ trait Utility {
       * @param df         = DataFrame from which new, updated rows will be generated from
       * @param dfViewName = the view created for the df
       * @param query      = String which will query the passed df to generate new rows that can be unioned with the old, unmodified rows
+      *
+      * Example:
+      *
+      * // Sample DataFrame
+      * case class BrandMap(MasterBrandID:Int, DisplayBrandID:Int)
+      * val dfBaseBrandExpansion = Seq(
+      *                                 BrandMap(121,122)
+      *                                 ,BrandMap(121,123)
+      *                                 ,BrandMap(121,124)
+      *                                 ,BrandMap(128,131)
+      *                                 ,BrandMap(128,132)
+      *                                 ,BrandMap(130,133)
+      *                                 ,BrandMap(611,624)
+      *                                 ,BrandMap(651,656)
+      *                               ).toDF
+      *
+      * // Create view for this sample
+      * dfBaseBrandExpansion.createOrReplaceTempView("dfBaseBrandExpansion_VIEW")
+      *
+      *
+      * // TRADITIONAL UPDATE STATEMENT
+      *
+      * UPDATE dfBaseBrandExpansion_VIEW
+      * SET MasterBrandID = MasterBrandID +1
+      * WHERE MasterBrandID < 600
+      *
+      *
+      * // We change the UPDATE statement to select all columns from the source DataFrame
+      * // and add updated columns aliased as the original columns with a "_TMP" suffix.
+      * // Newly updated rows will be created and merged with the unmodified rows.
+      *
+      * val updateStatement = """
+      *                         |SELECT be.*
+      *                         |  ,MasterBrandID +1 AS MasterBrandID_TMP
+      *                         |FROM {SOURCE_DF} AS be
+      *                         |WHERE MasterBrandID < 600
+      *                         |""".stripMargin
+      *
+      * val dfNew = updateDataFrame(spark, dfBaseBrandExpansion, "dfBaseBrandExpansion_VIEW", updateStatement)
+      *
+      * dfBaseBrandExpansion.show
+      *
+      * +-------------+--------------+
+      * |MasterBrandID|DisplayBrandID|
+      * +-------------+--------------+
+      * |          121|           122|
+      * |          121|           123|
+      * |          121|           124|
+      * |          128|           131|
+      * |          128|           132|
+      * |          130|           133|
+      * |          611|           624|
+      * |          651|           656|
+      * +-------------+--------------+
+      *
+      *
+      * dfNew.show
+      *
+      * +-------------+--------------+
+      * |MasterBrandID|DisplayBrandID|
+      * +-------------+--------------+
+      * |          122|           122|
+      * |          122|           123|
+      * |          122|           124|
+      * |          129|           131|
+      * |          129|           132|
+      * |          131|           133|
+      * |          611|           624|
+      * |          651|           656|
+      * +-------------+--------------+
+      *
+      *
+      * // ListingDisplay table
+      * val dflistingDisplay = spark.sql("SELECT * FROM eagle_edw_batch.ListingDisplay")
+      * dflistingDisplay.createOrReplaceTempView("dflistingDisplay_VIEW")
+      *
+      *
+      * val incrementQuery = """
+      *                         |SELECT ld.*
+      *                         |  ,listingid + 1 AS listingid_TMP
+      *                         |
+      *                         |FROM {SOURCE_DF} AS ld
+      *                         """.stripMargin
+      *
+      *
+      *
+      * val incrementedListingDisplay = updateDataFrame(spark, dflistingDisplay, "dflistingDisplay_VIEW", incrementQuery)
       */
     def updateDataFrame(spark: SparkSession, df: DataFrame, dfViewName: String, query: String, msg: String = ""): DataFrame = {
 
