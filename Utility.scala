@@ -2,7 +2,6 @@
   * Created by aguyyala on 6/21/17.
   */
 
-import org.springframework.boot.ApplicationArguments
 import scala.collection.JavaConversions._
 import org.apache.spark.sql.{SparkSession, DataFrame, Column, SaveMode}
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient
